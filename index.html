@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOFA de tu tema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: una columna de lectura; pasos como listas de verificación con Sí/No; barra de progreso fija abajo; resultado = veredicto + matriz DOFA 2x2 + plan de ajustes */
+:root{
+  --bg:#F3F5F4; --surface:#FFFFFF; --ink:#17201D; --muted:#56635E; --line:#D7DEDA;
+  --accent:#1D5876; --accent-ink:#FFFFFF;
+  --f:#2C744A; --f-bg:#E4F1E8; --d:#9C540E; --d-bg:#FAEEDC;
+  --o:#28599E; --o-bg:#E5EDF8; --a:#A9372B; --a-bg:#FAE6E3;
+  --display:"Newsreader", Georgia, "Times New Roman", serif;
+  --body:"Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111715; --surface:#19211F; --ink:#E5ECE9; --muted:#9BA8A3; --line:#2B3532;
+  --accent:#86BAD6; --accent-ink:#0E1A20;
+  --f:#7FCB9C; --f-bg:#1B3226; --d:#E6A55E; --d-bg:#3A2917; --o:#93B6EC; --o-bg:#1B2A40; --a:#EF8D80; --a-bg:#3D1F1B;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --surface:#19211F; --ink:#E5ECE9; --muted:#9BA8A3; --line:#2B3532;
+  --accent:#86BAD6; --accent-ink:#0E1A20;
+  --f:#7FCB9C; --f-bg:#1B3226; --d:#E6A55E; --d-bg:#3A2917; --o:#93B6EC; --o-bg:#1B2A40; --a:#EF8D80; --a-bg:#3D1F1B;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.wrap{max-width:760px;margin:0 auto;padding-block:32px 0}
+h1,h2,h3{font-family:var(--display);font-weight:600;text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(2rem,5vw,2.6rem)}
+h2{font-size:1.45rem}
+h3{font-size:1.1rem}
+p{margin:0}
+.eyebrow{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.lead{color:var(--muted);max-width:62ch}
+header{display:grid;gap:14px;margin-bottom:28px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem;color:var(--muted)}
+.legend b{color:var(--ink);font-weight:600}
+
+.fields{display:grid;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+label{font-size:.85rem;font-weight:600;display:block;margin-bottom:4px}
+input[type=text],textarea{width:100%;font:inherit;font-size:.95rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 11px}
+textarea{resize:vertical;min-height:60px}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{font-size:.8rem;color:var(--muted);margin-top:2px}
+
+.steps{display:grid;gap:28px;margin-top:28px}
+.step{display:grid;gap:10px}
+.step-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px}
+.step-num{font-family:var(--mono);font-size:.8rem;color:var(--muted);display:block;margin-bottom:2px}
+.count{font-family:var(--mono);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.items{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:1fr auto;gap:10px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.item-text{min-width:0}
+.item-text p{font-size:.95rem}
+.tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.tag.key{color:var(--accent);border-color:var(--accent)}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:inherit;font-size:.88rem;font-weight:600;padding:8px 16px;min-width:58px;background:var(--surface);color:var(--muted);border:0;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button:hover{color:var(--ink)}
+.item[data-v=si]{border-color:color-mix(in srgb,var(--f) 45%,var(--line))}
+.item[data-v=no]{border-color:color-mix(in srgb,var(--d) 45%,var(--line))}
+.seg button[aria-pressed=true].yes{background:var(--f-bg);color:var(--f)}
+.seg button[aria-pressed=true].no{background:var(--d-bg);color:var(--d)}
+@media (max-width:520px){.item{grid-template-columns:1fr}.seg{justify-self:start}}
+
+.dock{position:sticky;bottom:0;margin-top:32px;background:var(--bg);border-top:1px solid var(--line);
+  padding-block:12px calc(12px + env(safe-area-inset-bottom, 0px));display:flex;align-items:center;gap:14px;flex-wrap:wrap;z-index:5}
+.bar{flex:1 1 180px;height:8px;background:var(--line);border-radius:999px;overflow:hidden;min-width:0}
+.bar span{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.prog{font-family:var(--mono);font-size:.82rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.btn{font:inherit;font-weight:600;font-size:.92rem;border-radius:6px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent)}
+.tools{display:flex;gap:10px;flex-wrap:wrap}
+
+#result{margin-top:36px;display:grid;gap:22px;scroll-margin-top:16px}
+.verdict{border-radius:10px;padding:20px;display:grid;gap:8px;border:1px solid var(--line);background:var(--surface)}
+.verdict.ok{background:var(--f-bg);border-color:transparent}
+.verdict.mid{background:var(--o-bg);border-color:transparent}
+.verdict.low{background:var(--d-bg);border-color:transparent}
+.verdict h2{font-size:1.6rem}
+.score{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.score b{color:var(--ink);font-size:1.05rem}
+.echo{font-size:.9rem;color:var(--muted)}
+.echo b{color:var(--ink)}
+
+.dofa{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px}
+.axis{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.axis.row{writing-mode:vertical-rl;transform:rotate(180deg);padding:4px}
+.quad{border-radius:8px;padding:14px;display:grid;gap:8px;align-content:start;min-width:0}
+.quad h3{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.quad h3 span{font-family:var(--mono);font-size:.8rem;font-variant-numeric:tabular-nums}
+.quad ul{margin:0;padding-left:18px;font-size:.88rem;display:grid;gap:4px}
+.quad .empty{font-size:.85rem;opacity:.8}
+.qF{background:var(--f-bg)}.qF h3{color:var(--f)}
+.qD{background:var(--d-bg)}.qD h3{color:var(--d)}
+.qO{background:var(--o-bg)}.qO h3{color:var(--o)}
+.qA{background:var(--a-bg)}.qA h3{color:var(--a)}
+@media (max-width:560px){.dofa{grid-template-columns:1fr}.axis{display:none}}
+
+.plan{display:grid;gap:10px}
+.plan ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.plan li{font-size:.93rem}
+.plan li small{display:block;color:var(--muted);font-size:.84rem}
+.pill{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-right:6px}
+.pill.D{background:var(--d-bg);color:var(--d)}.pill.A{background:var(--a-bg);color:var(--a)}
+#copyBox{width:100%;min-height:160px;font-family:var(--mono);font-size:.8rem}
+.note{font-size:.82rem;color:var(--muted)}
+footer{margin-top:40px;padding-block:20px 32px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted);display:grid;gap:6px}
+footer a{color:var(--accent)}
+.banner{font-size:.85rem;background:var(--o-bg);color:var(--o);border-radius:6px;padding:8px 12px}
+@media (prefers-reduced-motion:reduce){.bar span{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Antes de enviar tu artículo · docentes y semilleros</span>
+    <h1>DOFA de tu tema de investigación</h1>
+    <p class="lead">Responde Sí o No en cada cuadro de los seis pasos. Al terminar verás si tu tema está bien delimitado y una matriz DOFA con tus fortalezas, debilidades, oportunidades y amenazas, más los ajustes que conviene hacer.</p>
+    <div class="legend">
+      <span><b>Interno:</b> depende de cómo escribes y delimitas (Fortaleza o Debilidad).</span>
+      <span><b>Externo:</b> depende de fuentes, datos, ética o revista (Oportunidad o Amenaza).</span>
+      <span><b>Clave:</b> si falla, el tema no está delimitado.</span>
+    </div>
+    <div class="fields">
+      <div><label for="tema">Tu tema (opcional)</label><input type="text" id="tema" placeholder="Ej.: lectura en voz alta en grado 3.º en dos escuelas rurales de Bello, 2025"></div>
+      <div><label for="pregunta">Tu pregunta de investigación (opcional)</label><textarea id="pregunta" placeholder="Ej.: ¿Cómo transforma la lectura en voz alta la comprensión inferencial de…?"></textarea>
+      <p class="hint">Aparecen en tu resultado para que lo compartas con tu acompañante.</p></div>
+    </div>
+    <div class="tools">
+      <button class="btn ghost" id="sample" type="button">Cargar ejemplo</button>
+      <button class="btn ghost" id="reset" type="button">Borrar respuestas</button>
+    </div>
+    <p class="banner" id="sampleNote" hidden>Estás viendo respuestas de ejemplo. Bórralas para responder con tu propio tema.</p>
+  </header>
+
+  <main>
+    <div class="steps" id="steps"></div>
+    <div class="dock">
+      <div class="bar" aria-hidden="true"><span id="barFill"></span></div>
+      <span class="prog" id="prog">0 de 24</span>
+      <button class="btn primary" id="go" type="button" disabled>Ver mi resultado</button>
+    </div>
+    <section id="result" hidden aria-live="polite"></section>
+  </main>
+
+  <footer>
+    <p>Basado en el paso de interés → tema → pregunta → problema (Booth et al., 2024), los criterios FINER para una buena pregunta (Hulley et al., 2007) y los criterios de justificación de Hernández Sampieri et al. (2014), organizados como una adaptación de la matriz DOFA.</p>
+    <p>Booth, W. C., Colomb, G. G., Williams, J. M., Bizup, J., &amp; FitzGerald, W. T. (2024). <i>The craft of research</i> (5.ª ed.). University of Chicago Press. <a href="https://chicagoreference.com/ucp/books/book/chicago/C/bo215874008.html" target="_blank" rel="noopener">Ficha</a></p>
+    <p>Hernández Sampieri, R., Fernández Collado, C., &amp; Baptista Lucio, P. (2014). <i>Metodología de la investigación</i> (6.ª ed.). McGraw-Hill. <a href="https://campus.ubl.ac.cr/pluginfile.php/117202/mod_glossary/attachment/7288/Sesi%C3%B3n%208%20-%20Hern%C3%A1ndez%20Sampieri%20Roberto%2C%20pp.%2039-41.pdf" target="_blank" rel="noopener">Extracto, pp. 39–41</a></p>
+    <p>Hulley, S. B., Cummings, S. R., Browner, W. S., Grady, D. G., &amp; Newman, T. B. (2007). <i>Designing clinical research</i> (3.ª ed.). Lippincott Williams &amp; Wilkins. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4538941/table/T1" target="_blank" rel="noopener">Tabla FINER</a></p>
+  </footer>
+</div>
+
+<script>
+const STEPS = [
+ {n:1, title:"Del interés al tema", items:[
+  {id:"t1",q:"El tema nombra el objeto de estudio y al menos dos límites: población o corpus, lugar o periodo.",si:"Tema con objeto y límites claros",no:"Tema sin límites de población, lugar o periodo",fix:"Añade quién o qué corpus, dónde y cuándo."},
+  {id:"t2",q:"Las razones para investigarlo incluyen un motivo académico, no solo personal.",si:"Motivación académica explícita",no:"Motivación solo personal",fix:"Di qué aporta el tema a tu área o qué discusión alimenta."},
+  {id:"t3",q:"Una persona de otra disciplina entendería de qué trata al leer tu párrafo.",si:"Tema comprensible fuera del área",no:"Tema difícil de entender fuera del área",fix:"Reescribe el párrafo sin jerga y pruébalo con un colega."}]},
+ {n:2, title:"La pregunta de investigación", items:[
+  {id:"p1",key:1,q:"Es una sola pregunta abierta, no de sí o no.",si:"Pregunta abierta y única",no:"Pregunta cerrada o múltiple",fix:"Empieza con cómo, por qué, qué o de qué manera, y deja una sola pregunta."},
+  {id:"p2",key:1,q:"La pregunta delimita qué, quién o qué corpus, dónde y cuándo.",si:"Pregunta delimitada",no:"Pregunta demasiado amplia",fix:"Lleva a la pregunta los límites que definiste en el tema."},
+  {id:"p3",key:1,ext:1,q:"Puedes responderla con las fuentes, los datos y el tiempo que tienes.",si:"Acceso suficiente a fuentes, datos y tiempo",no:"Fuentes, datos o tiempo insuficientes",fix:"Reduce el alcance o cambia a un corpus al que sí tengas acceso."},
+  {id:"p4",ext:1,q:"Su respuesta no está ya resuelta en manuales o estudios previos.",si:"Hay espacio para un aporte nuevo",no:"La pregunta ya tiene respuesta en la literatura",fix:"Identifica qué dejaron sin resolver esos estudios y enfoca la pregunta allí."},
+  {id:"p5",ext:1,q:"Si trabajas con personas, tienes aval ético o consentimiento informado (o tu estudio no lo requiere).",si:"Condiciones éticas resueltas",no:"Falta aval ético o consentimiento",fix:"Gestiona el aval del comité de ética antes de enviar."}]},
+ {n:3, title:"El problema", items:[
+  {id:"r1",key:1,q:"Nombras un vacío, una tensión o una contradicción en lo que ya se ha investigado.",si:"Problema formulado como vacío o tensión",no:"Hay tema, pero no problema",fix:"Completa la frase: «Aún no se sabe o no se comprende ___»."},
+  {id:"r2",q:"Explicas qué se pierde en el área si nadie responde la pregunta.",si:"Consecuencias del problema claras",no:"No se ven las consecuencias del problema",fix:"Responde: ¿para quién importa y qué cambia si se resuelve?"},
+  {id:"r3",q:"Argumentas al menos dos criterios de justificación: conveniencia, relevancia social, implicaciones prácticas, valor teórico o utilidad metodológica.",si:"Justificación con dos o más criterios",no:"Justificación débil",fix:"Elige dos criterios y escribe una oración con evidencia para cada uno."},
+  {id:"r4",ext:1,q:"Encuentras al menos una fuente reciente que muestra el estado de la discusión.",si:"Discusión académica activa sobre el tema",no:"Poca discusión académica localizada",fix:"Amplía la búsqueda a otras bases o idiomas antes de concluir que no hay estudios."}]},
+ {n:4, title:"Las palabras clave", items:[
+  {id:"k1",q:"Tus cinco palabras clave cubren el objeto, el enfoque y el contexto.",si:"Palabras clave completas",no:"Palabras clave incompletas o genéricas",fix:"Asigna al menos una palabra al objeto, otra al enfoque y otra al contexto."},
+  {id:"k2",q:"Usas términos normalizados de un tesauro cuando existen (por ejemplo, el Tesauro de la UNESCO).",si:"Términos normalizados",no:"Términos sin normalizar",fix:"Verifica cada término en un tesauro de tu área."},
+  {id:"k3",ext:1,q:"Al buscarlas en Scopus, Web of Science, Redalyc o SciELO aparecen trabajos cercanos al tuyo.",si:"Buena recuperación en bases de datos",no:"Las bases no devuelven trabajos afines",fix:"Prueba sinónimos o el término en inglés y ajusta la lista."}]},
+ {n:5, title:"Conceptos y perspectiva teórica", items:[
+  {id:"c1",q:"Nombras dos o tres conceptos centrales y cómo los entiendes en el artículo.",si:"Conceptos definidos",no:"Conceptos sin definir",fix:"Define cada concepto en una oración, con un autor de referencia."},
+  {id:"c2",q:"Identificas una perspectiva o tradición teórica con sus autores de referencia.",si:"Perspectiva teórica explícita",no:"Sin perspectiva teórica explícita",fix:"Nombra la tradición y dos autores que la representen."},
+  {id:"c3",q:"Explicas por qué esa perspectiva, y no otra cercana, sirve para responder la pregunta.",si:"Elección teórica justificada",no:"Elección teórica sin justificar",fix:"Escribe qué permite ver esta perspectiva que otra no."},
+  {id:"c4",ext:1,q:"Tienes acceso a la bibliografía teórica que necesitas.",si:"Bibliografía teórica disponible",no:"Bibliografía teórica de difícil acceso",fix:"Consulta la biblioteca, el préstamo interbibliotecario o versiones en acceso abierto."}]},
+ {n:6, title:"El manuscrito refleja la delimitación", items:[
+  {id:"m1",q:"El título nombra el objeto y el contexto del paso 1.",si:"Título delimitado",no:"Título general o ambiguo",fix:"Incluye en el título el objeto y al menos un límite."},
+  {id:"m2",q:"El resumen enuncia el problema, la pregunta u objetivo, el enfoque y el hallazgo principal.",si:"Resumen completo",no:"Resumen incompleto",fix:"Revisa que el resumen tenga problema, objetivo, enfoque y hallazgo."},
+  {id:"m3",q:"La introducción va del contexto al problema y del problema a la pregunta.",si:"Introducción bien encadenada",no:"Introducción sin problema ni pregunta visibles",fix:"Ordena la introducción: contexto, problema y pregunta, en ese orden."},
+  {id:"m4",q:"Las conclusiones responden la pregunta del paso 2, no otra.",si:"Conclusiones alineadas con la pregunta",no:"Conclusiones desalineadas con la pregunta",fix:"Empieza las conclusiones respondiendo la pregunta de forma directa."},
+  {id:"m5",ext:1,q:"El artículo se ajusta al enfoque y alcance de la revista elegida.",si:"Revista afín al artículo",no:"Revista poco afín o sin elegir",fix:"Lee el enfoque y alcance de la revista y artículos recientes publicados allí."}]}
+];
+const ALL = STEPS.flatMap(s => s.items.map(i => ({...i, step:s.n})));
+const TOTAL = ALL.length;
+const KEY = "dofa-delimitacion-v1";
+let state = {answers:{}, tema:"", pregunta:"", sample:false};
+try { const raw = localStorage.getItem(KEY); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch(e) {}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+
+const $ = s => document.querySelector(s);
+const stepsEl = $("#steps");
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+stepsEl.innerHTML = STEPS.map(s => `
+  <section class="step" aria-labelledby="h${s.n}">
+    <div class="step-head">
+      <div><span class="step-num">Paso ${s.n} de ${STEPS.length}</span><h2 id="h${s.n}">${s.title}</h2></div>
+      <span class="count" id="cnt${s.n}"></span>
+    </div>
+    <div class="items">${s.items.map(i => `
+      <div class="item" id="it-${i.id}">
+        <div class="item-text"><p>${i.q}</p>
+          <div class="tags"><span class="tag">${i.ext ? "Externo" : "Interno"}</span>${i.key ? '<span class="tag key">Clave</span>' : ""}</div>
+        </div>
+        <div class="seg" role="group" aria-label="Respuesta">
+          <button type="button" class="yes" data-id="${i.id}" data-v="si" aria-pressed="false">Sí</button>
+          <button type="button" class="no" data-id="${i.id}" data-v="no" aria-pressed="false">No</button>
+        </div>
+      </div>`).join("")}
+    </div>
+  </section>`).join("");
+
+stepsEl.addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]"); if (!b) return;
+  const {id, v} = b.dataset;
+  state.answers[id] = state.answers[id] === v ? undefined : v;
+  if (state.answers[id] === undefined) delete state.answers[id];
+  state.sample = false;
+  save(); paint();
+  if (!$("#result").hidden) showResult(false);
+});
+
+$("#tema").addEventListener("input", e => { state.tema = e.target.value; save(); });
+$("#pregunta").addEventListener("input", e => { state.pregunta = e.target.value; save(); });
+
+function paint(){
+  ALL.forEach(i => {
+    const v = state.answers[i.id];
+    const el = document.getElementById("it-" + i.id);
+    el.dataset.v = v || "";
+    el.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.v === v)));
+  });
+  STEPS.forEach(s => {
+    const done = s.items.filter(i => state.answers[i.id]).length;
+    document.getElementById("cnt" + s.n).textContent = `${done}/${s.items.length}`;
+  });
+  const n = Object.keys(state.answers).length;
+  $("#prog").textContent = `${n} de ${TOTAL}`;
+  $("#barFill").style.width = (n / TOTAL * 100) + "%";
+  $("#go").disabled = n < TOTAL;
+  $("#go").textContent = n < TOTAL ? `Faltan ${TOTAL - n}` : "Ver mi resultado";
+  $("#sampleNote").hidden = !state.sample;
+  $("#tema").value = state.tema || "";
+  $("#pregunta").value = state.pregunta || "";
+}
+
+function compute(){
+  const q = {F:[], D:[], O:[], A:[]};
+  ALL.forEach(i => {
+    const v = state.answers[i.id];
+    if (v === "si") q[i.ext ? "O" : "F"].push(i);
+    else if (v === "no") q[i.ext ? "A" : "D"].push(i);
+  });
+  const yes = q.F.length + q.O.length;
+  const pct = Math.round(yes / TOTAL * 100);
+  const keyFails = ALL.filter(i => i.key && state.answers[i.id] === "no");
+  let level, title, msg;
+  if (keyFails.length) {
+    level = "low"; title = "Tu tema aún no está delimitado";
+    msg = "Falla al menos un criterio clave. Resuélvelo antes de seguir con el resto: sin una pregunta delimitada, factible y con un problema claro, el artículo pierde su eje.";
+  } else if (pct >= 80) {
+    level = "ok"; title = "Tu tema está bien delimitado";
+    msg = "Cumples los criterios clave y la mayoría de los demás. Revisa los ajustes que quedan y puedes preparar el envío.";
+  } else if (pct >= 60) {
+    level = "mid"; title = "Tu tema está delimitado, con ajustes pendientes";
+    msg = "La base está bien, pero hay debilidades o amenazas que un evaluador notará. Atiéndelas antes de enviar.";
+  } else {
+    level = "low"; title = "Tu tema aún no está delimitado";
+    msg = "Menos del 60 % de los criterios se cumple. Vuelve a los pasos con más respuestas negativas y reescribe desde el tema.";
+  }
+  const plan = [...keyFails, ...q.D.filter(i => !i.key), ...q.A.filter(i => !i.key)];
+  return {q, pct, yes, keyFails, level, title, msg, plan};
+}
+
+function list(arr, field){
+  return arr.length ? `<ul>${arr.map(i => `<li>${esc(i[field])}</li>`).join("")}</ul>` : `<p class="empty">Ninguna.</p>`;
+}
+
+function showResult(scroll){
+  const r = compute();
+  const t = (state.tema || "").trim(), p = (state.pregunta || "").trim();
+  $("#result").innerHTML = `
+    <div class="verdict ${r.level}">
+      <span class="eyebrow">Resultado</span>
+      <h2>${r.title}</h2>
+      <p>${r.msg}</p>
+      <div class="score"><span><b>${r.pct} %</b> de criterios cumplidos</span><span><b>${r.yes}</b> de ${TOTAL} en Sí</span><span><b>${r.keyFails.length}</b> claves sin cumplir</span></div>
+      ${t || p ? `<div class="echo">${t ? `<p><b>Tema:</b> ${esc(t)}</p>` : ""}${p ? `<p><b>Pregunta:</b> ${esc(p)}</p>` : ""}</div>` : ""}
+    </div>
+    <div>
+      <h2 style="margin-bottom:12px">Tu matriz DOFA</h2>
+      <div class="dofa">
+        <span></span><span class="axis">Lo que sumas</span><span class="axis">Lo que resta</span>
+        <span class="axis row">Interno</span>
+        <div class="quad qF"><h3>Fortalezas <span>${r.q.F.length}</span></h3>${list(r.q.F, "si")}</div>
+        <div class="quad qD"><h3>Debilidades <span>${r.q.D.length}</span></h3>${list(r.q.D, "no")}</div>
+        <span class="axis row">Externo</span>
+        <div class="quad qO"><h3>Oportunidades <span>${r.q.O.length}</span></h3>${list(r.q.O, "si")}</div>
+        <div class="quad qA"><h3>Amenazas <span>${r.q.A.length}</span></h3>${list(r.q.A, "no")}</div>
+      </div>
+    </div>
+    <div class="plan">
+      <h2>Qué ajustar antes de enviar</h2>
+      ${r.plan.length ? `<ol>${r.plan.map(i => `<li><span class="pill ${i.ext ? "A" : "D"}">${i.ext ? "Amenaza" : "Debilidad"}</span>${i.key ? "<b>Clave · </b>" : ""}${esc(i.no)} <small>Paso ${i.step}: ${esc(i.fix)}</small></li>`).join("")}</ol>` : `<p>No hay ajustes pendientes. Conserva este resultado para tu acompañante.</p>`}
+    </div>
+    <div class="tools">
+      <button class="btn primary" id="copy" type="button">Copiar resultado</button>
+      <button class="btn ghost" id="top" type="button">Volver a los pasos</button>
+    </div>
+    <textarea id="copyBox" hidden readonly aria-label="Resultado en texto"></textarea>
+    <p class="note" id="copyNote" hidden></p>`;
+  $("#result").hidden = false;
+  $("#copy").onclick = () => copyResult(r);
+  $("#top").onclick = () => window.scrollTo({top:0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  if (scroll) $("#result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+}
+
+function asText(r){
+  const sec = (name, arr, f) => `${name} (${arr.length}):\n` + (arr.length ? arr.map(i => `- ${i[f]}`).join("\n") : "- Ninguna");
+  return [
+    "DOFA de mi tema de investigación",
+    state.tema ? `Tema: ${state.tema}` : "",
+    state.pregunta ? `Pregunta: ${state.pregunta}` : "",
+    `Resultado: ${r.title} (${r.pct} % de criterios cumplidos; ${r.keyFails.length} claves sin cumplir)`,
+    "",
+    sec("Fortalezas", r.q.F, "si"), sec("Debilidades", r.q.D, "no"),
+    sec("Oportunidades", r.q.O, "si"), sec("Amenazas", r.q.A, "no"),
+    "",
+    "Qué ajustar:",
+    r.plan.length ? r.plan.map((i, k) => `${k + 1}. ${i.no} — ${i.fix}`).join("\n") : "Sin ajustes pendientes."
+  ].filter((l, k, a) => l !== "" || a[k - 1] !== "").join("\n");
+}
+
+function copyResult(r){
+  const text = asText(r);
+  const box = $("#copyBox"), note = $("#copyNote");
+  const fallback = () => { box.value = text; box.hidden = false; box.focus(); box.select(); note.hidden = false; note.textContent = "Selecciona el texto y cópialo con Ctrl+C (o mantén presionado en el celular)."; };
+  try {
+    navigator.clipboard.writeText(text).then(() => { note.hidden = false; note.textContent = "Resultado copiado. Pégalo en un correo o en el chat con tu acompañante."; box.hidden = true; }, fallback);
+  } catch(e) { fallback(); }
+}
+
+$("#go").addEventListener("click", () => showResult(true));
+
+$("#sample").addEventListener("click", () => {
+  const no = ["t3","p4","r3","k2","k3","m2","m5"];
+  state.answers = {}; ALL.forEach(i => state.answers[i.id] = no.includes(i.id) ? "no" : "si");
+  state.tema = "Lectura en voz alta en grado 3.º en dos escuelas rurales de Bello, 2025 (ejemplo)";
+  state.pregunta = "¿Cómo incide la lectura en voz alta en la comprensión inferencial de estudiantes de grado 3.º de dos escuelas rurales de Bello durante 2025? (ejemplo)";
+  state.sample = true; save(); paint(); showResult(true);
+});
+
+let armed = false, armTimer;
+$("#reset").addEventListener("click", e => {
+  const b = e.currentTarget;
+  if (!armed) { armed = true; b.textContent = "¿Seguro? Toca de nuevo"; armTimer = setTimeout(() => { armed = false; b.textContent = "Borrar respuestas"; }, 4000); return; }
+  clearTimeout(armTimer); armed = false; b.textContent = "Borrar respuestas";
+  state = {answers:{}, tema:"", pregunta:"", sample:false}; save(); paint();
+  $("#result").hidden = true; $("#result").innerHTML = "";
+});
+
+paint();
+if (Object.keys(state.answers).length === TOTAL) showResult(false);
+</script>
+
+</body>
+</html>
